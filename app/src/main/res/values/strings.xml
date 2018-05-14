@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Bluetooth_duino</string>
+
+    <string name="refresh">Refresh</string>
+    <string name="forward">Forward</string>
+    <string name="back">Back</string>
+    <string name="left">Left</string>
+    <string name="right">Right</string>
+    <string name="disconnect">Disconnect</string>
+</resources>
