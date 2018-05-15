@@ -20,7 +20,7 @@ class LedControl : AppCompatActivity() {
     private var mInStream: InputStream? = null
 
     companion object {
-        var mMyUUID: UUID = UUID.fromString("f21a1c1b-5264-4746-babd-9a4e797bc3a2")
+        var mMyUUID: UUID = UUID.fromString("1f11bed2-9324-4f65-9069-0817ec5ca663")
         var mBluetoothSocket: BluetoothSocket? = null
         lateinit var mProgressDial: ProgressDialog
         lateinit var mBluetoothAdapter: BluetoothAdapter
@@ -42,6 +42,7 @@ class LedControl : AppCompatActivity() {
     }
 
     private fun sendCommand(input: String) {
+        Log.d("LedControl", "sendCommand, inpu: ${input}")
         if (mBluetoothSocket != null)
             try {
                 mBluetoothSocket!!.outputStream.write(input.toByteArray())
