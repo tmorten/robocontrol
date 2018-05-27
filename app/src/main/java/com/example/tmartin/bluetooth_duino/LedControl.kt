@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.support.constraint.ConstraintLayout
 import android.util.Log
 import android.view.View
 import kotlinx.android.synthetic.main.activity_led_control.*
@@ -35,17 +36,58 @@ class LedControl : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_led_control)
 
-        val _layout = findViewById(R.id.layout) as android.support.constraint.ConstraintLayout
+        val _layout = findViewById<ConstraintLayout>(R.id.layout)
         val background = CreateCanvas(this)
         _layout.addView(background)
 
-        mAddress = intent.getStringExtra(DeviceListActivity.EXTRA_ADDRESS)
-        ConnectToDevice(this).execute()
         control_forward.setOnClickListener { sendCommand("f") }
-        control_left.setOnClickListener { sendCommand("l") }
+        control_left.setOnClickListener {
+            //sendCommand("l")
+            val rotate = Rotate(this)
+            _layout.addView(rotate)
+        }
         control_right.setOnClickListener { sendCommand("r") }
         control_back.setOnClickListener { sendCommand("b") }
         control_led_disconnect.setOnClickListener { disconnect() }
+
+/*
+        mAddress = intent.getStringExtra(DeviceListActivity.EXTRA_ADDRESS)
+        ConnectToDevice(this).execute()
+
+*/
+
+        for (i in 1..50)
+        {
+            val bgrnd = CreatePoints(this)
+            _layout.addView(bgrnd)
+        }
+    }
+
+    class  Rotate(context: Context) : View(context)
+    {
+        override fun onDraw(canvas: Canvas?) {
+            canvas?.rotate(20.toFloat())
+        }
+    }
+
+    class CreatePoints(context: Context) : View(context){
+        override fun onDraw(canvas: Canvas?) {
+            val brush = Paint()
+            brush.setARGB(255, 255, 0, 0)
+            val centerX = 360
+            val centerY = 1118-1118/3
+            val randX = random(0, 720).toDouble()
+            val randY = random(0, 1118).toDouble()
+
+            if(Math.sqrt(Math.pow(randX-centerX, 2.toDouble()) + Math.pow(randY-centerY, 2.toDouble())) <= 340)
+            {
+                canvas?.drawCircle(randX.toFloat(), randY.toFloat(), 5.toFloat(), brush)
+            }
+        }
+
+        fun random(from: Int, to: Int) : Int {
+            return Random().nextInt(to - from) + from
+        }
     }
 
     class CreateCanvas (context: Context): View(context) {
@@ -53,11 +95,11 @@ class LedControl : AppCompatActivity() {
         override fun onDraw (canvas: Canvas) {
             canvas.drawRGB (255, 255, 255)
             val width = getWidth ()
-            val hieght = getHeight ()
+            val height = getHeight ()
             val brushRadar = Paint ()
             val brushCenter = Paint()
             brushRadar.setARGB (255, 0, 0, 0)
-            brushCenter.setARGB(255, 255, 0, 0)
+            brushCenter.setARGB(255, 0, 0, 0)
             brushRadar.setStyle (Paint.Style.STROKE)
 
             canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(),5.toFloat(), brushCenter)
