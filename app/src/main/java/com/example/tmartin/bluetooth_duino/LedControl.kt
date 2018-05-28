@@ -36,30 +36,27 @@ class LedControl : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_led_control)
 
-        val _layout = findViewById<ConstraintLayout>(R.id.layout)
+        mAddress = intent.getStringExtra(DeviceListActivity.EXTRA_ADDRESS)
+        ConnectToDevice(this).execute()
+
+        val layout = findViewById<ConstraintLayout>(R.id.layout)
         val background = CreateCanvas(this)
-        _layout.addView(background)
+        layout.addView(background)
 
         control_forward.setOnClickListener { sendCommand("f") }
         control_left.setOnClickListener {
             //sendCommand("l")
             val rotate = Rotate(this)
-            _layout.addView(rotate)
+            layout.addView(rotate)
         }
         control_right.setOnClickListener { sendCommand("r") }
         control_back.setOnClickListener { sendCommand("b") }
         control_led_disconnect.setOnClickListener { disconnect() }
 
-/*
-        mAddress = intent.getStringExtra(DeviceListActivity.EXTRA_ADDRESS)
-        ConnectToDevice(this).execute()
-
-*/
-
         for (i in 1..50)
         {
             val bgrnd = CreatePoints(this)
-            _layout.addView(bgrnd)
+            layout.addView(bgrnd)
         }
     }
 
@@ -78,9 +75,20 @@ class LedControl : AppCompatActivity() {
             val centerY = 1118-1118/3
             val randX = random(0, 720).toDouble()
             val randY = random(0, 1118).toDouble()
+            val distance = Math.sqrt(Math.pow(randX-centerX, 2.toDouble()) + Math.pow(randY-centerY, 2.toDouble()))
 
-            if(Math.sqrt(Math.pow(randX-centerX, 2.toDouble()) + Math.pow(randY-centerY, 2.toDouble())) <= 340)
+            if( distance <= 340)
             {
+                if (distance < 44.5)
+                    brush.setARGB(255, 255, 0, 0)
+                else if (distance > 44.5 && distance < 85)
+                    brush.setARGB(255, 64, 128, 64)
+                else if (distance > 85 && distance < 170)
+                    brush.setARGB(255, 0, 255, 0)
+                else if (distance > 170 && distance < 255)
+                    brush.setARGB(255, 64, 64, 128)
+                else
+                    brush.setARGB(255, 0, 0, 255)
                 canvas?.drawCircle(randX.toFloat(), randY.toFloat(), 5.toFloat(), brush)
             }
         }
@@ -104,6 +112,10 @@ class LedControl : AppCompatActivity() {
 
             canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(),5.toFloat(), brushCenter)
             canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), 340.toFloat(), brushRadar)
+            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), 255.toFloat(), brushRadar)
+            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), 170.toFloat(), brushRadar)
+            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), 85.toFloat(), brushRadar)
+            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), (44.5).toFloat(), brushRadar)
         }
     }
 
