@@ -1,57 +1,79 @@
 package com.example.tmartin.bluetooth_duino
 
-import android.app.ProgressDialog
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothSocket
-import android.os.AsyncTask
+import android.app.Activity
+import android.content.Context
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.content.Context
+import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.support.constraint.ConstraintLayout
 import android.util.Log
 import android.view.View
+import android.widget.Toast
+import app.akexorcist.bluetotohspp.library.BluetoothSPP
+import app.akexorcist.bluetotohspp.library.BluetoothState
+import app.akexorcist.bluetotohspp.library.DeviceList
 import kotlinx.android.synthetic.main.activity_led_control.*
-import java.io.IOException
-import java.io.InputStream
 import java.util.*
 
 
 class LedControl : AppCompatActivity() {
 
-    private var mInStream: InputStream? = null
-
-    companion object {
-        var mMyUUID: UUID = UUID.fromString("1f11bed2-9324-4f65-9069-0817ec5ca663")
-        var mBluetoothSocket: BluetoothSocket? = null
-        lateinit var mProgressDial: ProgressDialog
-        lateinit var mBluetoothAdapter: BluetoothAdapter
-        var mIsConnected: Boolean = false
-        lateinit var mAddress: String
-    }
+    lateinit var m_BlueT : BluetoothSPP
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_led_control)
 
-        mAddress = intent.getStringExtra(DeviceListActivity.EXTRA_ADDRESS)
-        ConnectToDevice(this).execute()
+        m_BlueT = BluetoothSPP(this)
 
-        val layout = findViewById<ConstraintLayout>(R.id.layout)
-        val background = CreateCanvas(this)
-        layout.addView(background)
-
-        control_forward.setOnClickListener { sendCommand("f") }
-        control_left.setOnClickListener {
-            //sendCommand("l")
-            val rotate = Rotate(this)
-            layout.addView(rotate)
+        if(!m_BlueT.isBluetoothAvailable()) {
+            // bluetooth is not available
+            Toast.makeText(applicationContext, "Bluetooth is not available", Toast.LENGTH_LONG).show()
         }
-        control_right.setOnClickListener { sendCommand("r") }
-        control_back.setOnClickListener { sendCommand("b") }
-        control_led_disconnect.setOnClickListener { disconnect() }
+
+        m_BlueT.setBluetoothConnectionListener(object : BluetoothSPP.BluetoothConnectionListener {
+            override fun onDeviceConnected(name: String?, address: String?) {
+                control_led_connect.text = "Connected to ${name}"
+            }
+
+            override fun onDeviceDisconnected() {
+                control_led_connect.text = "Connection lost"
+            }
+
+            override fun onDeviceConnectionFailed() {
+                control_led_connect.text = "Unable to connet"
+            }
+        })
+
+        control_led_connect.setOnClickListener {
+            if (m_BlueT.serviceState == BluetoothState.STATE_CONNECTED) {
+                m_BlueT.disconnect()
+            } else {
+                val intent = Intent(applicationContext, DeviceList::class.java)
+                startActivityForResult(intent, BluetoothState.REQUEST_CONNECT_DEVICE)
+            }
+        }
+
+        control_forward.setOnClickListener {
+            Log.d("RoboDuino", "Forward button pushed")
+            m_BlueT.send("f", true)
+        }
+
+        control_left.setOnClickListener {
+            Log.d("RoboDuino", "Left button pushed")
+            m_BlueT.send("l", true)
+        }
+
+        control_right.setOnClickListener {
+            Log.d("RoboDuino", "Right button pushed")
+            m_BlueT.send("r", true)
+        }
+
+        control_back.setOnClickListener {
+            Log.d("RoboDuino", "Backward button pushed")
+            m_BlueT.send("b", true)
+        }
 
         for (i in 1..50)
         {
@@ -119,69 +141,35 @@ class LedControl : AppCompatActivity() {
         }
     }
 
-
-    private fun sendCommand(input: String) {
-        Log.d("LedControl", "sendCommand, inpu: ${input}")
-        if (mBluetoothSocket != null)
-            try {
-                mBluetoothSocket!!.outputStream.write(input.toByteArray())
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
+    override fun onStart() {
+        super.onStart()
+        if (!m_BlueT.isBluetoothEnabled) {
+            // BT is disabled
+            m_BlueT.enable()
+        } else {
+            // BT is enabled
+            m_BlueT.setupService()
+            m_BlueT.startService(BluetoothState.DEVICE_OTHER)
+        }
     }
 
-    private fun disconnect() {
-        if (mBluetoothSocket != null) {
-            try {
-                mBluetoothSocket!!.close()
-                mBluetoothSocket = null
-                mIsConnected = false
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-        }
-        finish()
+    override fun onDestroy() {
+        super.onDestroy()
+        m_BlueT.stopService()
     }
 
-    private class ConnectToDevice(c: Context) : AsyncTask<Void, Void, String>() {
-        private var connectSuccess: Boolean = true
-        private val context: Context
-
-        init {
-            this.context = c
-        }
-
-        override fun onPreExecute() {
-            super.onPreExecute()
-            mProgressDial = ProgressDialog.show(context, "Connecting...", "Please wait")
-        }
-
-        override fun doInBackground(vararg p0: Void?): String? {
-            try {
-                if (mBluetoothSocket == null || !mIsConnected) {
-                    mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-                    val device: BluetoothDevice = mBluetoothAdapter.getRemoteDevice(mAddress)
-                    mBluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(mMyUUID)
-                    BluetoothAdapter.getDefaultAdapter().cancelDiscovery()
-                    mBluetoothSocket!!.connect()
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
+            if (resultCode == Activity.RESULT_OK) {
+                m_BlueT.connect(data)
+            } else if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
+                if (resultCode == Activity.RESULT_OK) {
+                    m_BlueT.setupService()
+                } else {
+                    Toast.makeText(applicationContext, "Bluetooth was not enabled", Toast.LENGTH_LONG).show()
+                    finish()
                 }
-            } catch (e: IOException) {
-                connectSuccess = false
-                e.printStackTrace()
             }
-            return null
         }
-
-        override fun onPostExecute(result: String?) {
-            super.onPostExecute(result)
-
-            if (!connectSuccess) {
-                Log.i("data", "couldn't connect")
-            } else {
-                mIsConnected = true
-            }
-            mProgressDial.dismiss()
-        }
-
     }
 }
