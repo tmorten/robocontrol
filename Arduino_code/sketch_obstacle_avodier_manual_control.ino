@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 // Define pins
 int en_A = 4;   // Right motor enable (PWM)
 int in1 = 2;    // Control pin
@@ -10,7 +12,7 @@ int in4 = 6;
 // Motor speed
 #define initialSpeed 100
 
-int sensor[5]={1,1,1,1,1};
+int sensor[5] = {1, 1, 1, 1, 1};
 
 // PID
 float Kp = 2, Ki = 0.5, Kd = 5;
@@ -26,6 +28,13 @@ char data;
 long duration;
 int distance;
 
+// Servo
+int servoMotorPin = 10;
+Servo servoMotor;
+
+int cycle = 0;
+bool up = true;
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -33,58 +42,82 @@ void setup() {
   pinMode(en_A, OUTPUT);
   pinMode(in1, OUTPUT);
   pinMode(in2, OUTPUT);
-    
+
   pinMode(en_B, OUTPUT);
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
-  
+
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
   pinMode(A2, INPUT);
   pinMode(A3, INPUT);
   pinMode(A4, INPUT);
 
-  pinMode(13, OUTPUT);
-
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
+
+  servoMotor.attach(servoMotorPin);
 }
 
 void loop() {
-  
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
 
-  duration = pulseIn(echoPin, HIGH);
-  distance = duration * 0.034 / 2;
+  servoMotor.write(cycle);
+    delay(200);
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    duration = pulseIn(echoPin, HIGH);
+    distance = duration * 0.034 / 2;
+    if (distance < 50) {
+      delay(200);
+      Serial.print(distance);
+      Serial.print('-');
+      Serial.println(cycle);
+    }
+
+
   //Serial.print("Distance: ");
-  //Serial.println(distance);
+
 
   //readSensorValues();
   //calculatePid();
   //motorControl();
   analogWrite(en_A, initialSpeed);
-  analogWrite(en_B, 95);
+  analogWrite(en_B, initialSpeed - 5);
 
-  if (Serial.available()) {
+  if (Serial.available() > 0) {
     data = Serial.read();
-    Serial.println(data);
+    //Serial.println(data);
     if (data == 'f') {
+      //Serial.println("FORWARD");
       Forward();
     } else if (data == 'b') {
-       Backward();
+      //Serial.println("BACKWARD");
+      Backward();
     } else if (data == 'l') {
-      Left();
-    } else if (data == 'r') {
+      //Serial.println("LEFT");
       Right();
+    } else if (data == 'r') {
+      //Serial.println("RIGHT");
+      Left();
+    } else if (data == 's') {
+      Stop();
     }
-  } else {
-    Stop();
   }
 
+  if (cycle < 120 && up == true) {
+    cycle+=30;
+  } else if (cycle == 120 && up == true) {
+    cycle -= 30;
+    up = false;
+  } else if (cycle > 0 && up == false) {
+    cycle -= 30;
+  } else if (cycle == 0 && up == false) {
+    cycle += 30;
+    up = true;
+  }
 }
 
 void Forward() {
@@ -131,7 +164,7 @@ void readSensorValues() {
   sensor[2] = digitalRead(A2);
   sensor[3] = digitalRead(A3);
   sensor[4] = digitalRead(A4);
-  
+
   Serial.print(sensor[0]);
   Serial.print(" | ");
   Serial.print(sensor[1]);
@@ -147,7 +180,7 @@ void readSensorValues() {
   if ( sensor[0] == 1 && sensor[1] == 1 && sensor[2] == 1 && sensor[3] == 1 && sensor[4] == 0 )
     error = 4;
   //  1--1--1--0--0
-  else if ( sensor[0] == 1 && sensor[1] == 1 && sensor[2] == 1 && sensor[3] == 0 && sensor[4] == 0 ) 
+  else if ( sensor[0] == 1 && sensor[1] == 1 && sensor[2] == 1 && sensor[3] == 0 && sensor[4] == 0 )
     error = 3;
   //  1--1--1--0--1
   else if ( sensor[0] == 1 && sensor[1] == 1 && sensor[2] == 1 && sensor[3] == 0 && sensor[4] == 1 )
