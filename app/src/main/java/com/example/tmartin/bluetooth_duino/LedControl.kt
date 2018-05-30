@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.support.constraint.ConstraintLayout
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -20,11 +21,13 @@ import java.util.*
 class LedControl : AppCompatActivity() {
 
     lateinit var m_BlueT : BluetoothSPP
-
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_led_control)
-
+        val layout = findViewById<ConstraintLayout>(R.id.layout)
+        val background = CreateCanvas(this)
+        layout.addView(background)
         m_BlueT = BluetoothSPP(this)
 
         if(!m_BlueT.isBluetoothAvailable()) {
