@@ -21,7 +21,7 @@ import java.util.*
 class LedControl : AppCompatActivity() {
 
     lateinit var m_BlueT : BluetoothSPP
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_led_control)
@@ -77,11 +77,25 @@ class LedControl : AppCompatActivity() {
             Log.d("RoboDuino", "Backward button pushed")
             m_BlueT.send("b", true)
         }
-
+        /*
         for (i in 1..50)
         {
             val bgrnd = CreatePoints(this)
             layout.addView(bgrnd)
+        }*/
+    }
+
+    override fun onResume() {
+        super.onResume()
+        m_BlueT.setOnDataReceivedListener { data, message ->
+            try {
+                var mAngle = message.split('-')[0].toInt()
+                var mDistance = message.split('-')[1].toInt()
+                    CreatePoints(this, mAngle, mDistance)
+                }
+            catch (e: Exception){
+
+            }
         }
     }
 
@@ -92,17 +106,18 @@ class LedControl : AppCompatActivity() {
         }
     }
 
-    class CreatePoints(context: Context) : View(context){
+    class CreatePoints(context: Context, private val mAngle: Int, private val mDistance: Int) : View(context){
         override fun onDraw(canvas: Canvas?) {
             val brush = Paint()
             brush.setARGB(255, 255, 0, 0)
-            val centerX = 360
-            val centerY = 1118-1118/3
-            val randX = random(0, 720).toDouble()
-            val randY = random(0, 1118).toDouble()
-            val distance = Math.sqrt(Math.pow(randX-centerX, 2.toDouble()) + Math.pow(randY-centerY, 2.toDouble()))
-
-            if( distance <= 340)
+            val centerX = canvas!!.width/2
+            val centerY = canvas!!.height - canvas.height/3
+            val convDistance = mDistance / 50 * (width-30)
+            //val randX = random(0, 720).toDouble()
+            //val randY = random(0, 1118).toDouble()
+            //val distance = Math.sqrt(Math.pow(randX-centerX, 2.toDouble()) + Math.pow(randY-centerY, 2.toDouble()))
+            //val rad = 340.toFloat()/2 * mDistance / 100
+            /*if( distance <= 340)
             {
                 if (distance < 44.5)
                     brush.setARGB(255, 255, 0, 0)
@@ -114,8 +129,26 @@ class LedControl : AppCompatActivity() {
                     brush.setARGB(255, 64, 64, 128)
                 else
                     brush.setARGB(255, 0, 0, 255)
-                canvas?.drawCircle(randX.toFloat(), randY.toFloat(), 5.toFloat(), brush)
-            }
+
+            }*/
+
+            canvas!!.drawCircle(GetNewXPoint(mAngle, centerX, centerY, convDistance), GetNewYPoint(mAngle, centerX, centerY, convDistance), 5.toFloat(), brush)
+        }
+
+        fun GetNewXPoint(angle : Int, centerX : Int, centerY: Int, distance : Int) : Float
+        {
+            val angleRad = angle * Math.PI/180
+            val cosTheta = Math.cos(angleRad)
+            val sinTheta = Math.sin(angleRad)
+            return (cosTheta * (centerX - centerX) - sinTheta * (centerY-distance - centerY) + centerX).toFloat()
+        }
+
+        fun GetNewYPoint(angle : Int, centerX: Int, centerY : Int, distance: Int) : Float
+        {
+            val angleRad = angle * Math.PI/180
+            val cosTheta = Math.cos(angleRad)
+            val sinTheta = Math.sin(angleRad)
+            return (sinTheta * (centerX - centerX) + cosTheta * (centerY-distance - centerY) + centerY).toFloat()
         }
 
         fun random(from: Int, to: Int) : Int {
@@ -136,11 +169,10 @@ class LedControl : AppCompatActivity() {
             brushRadar.setStyle (Paint.Style.STROKE)
 
             canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(),5.toFloat(), brushCenter)
-            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), 340.toFloat(), brushRadar)
-            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), 255.toFloat(), brushRadar)
-            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), 170.toFloat(), brushRadar)
-            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), 85.toFloat(), brushRadar)
-            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), (44.5).toFloat(), brushRadar)
+            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), (width-30)/2.toFloat(), brushRadar)
+            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), (width-30)/4.toFloat(), brushRadar)
+            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), (width-30)/8.toFloat(), brushRadar)
+            canvas.drawCircle((width/2).toFloat(), (height - (height/3)).toFloat(), (width-30)/16.toFloat(), brushRadar)
         }
     }
 
