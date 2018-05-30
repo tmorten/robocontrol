@@ -3,8 +3,9 @@
 
     <string name="refresh">Refresh</string>
     <string name="forward">Forward</string>
-    <string name="back">Back</string>
+    <string name="back">Backward</string>
     <string name="left">Left</string>
     <string name="right">Right</string>
     <string name="connect">Connect</string>
+    <string name="stop">Stop</string>
 </resources>

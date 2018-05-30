@@ -12,9 +12,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
+        android:layout_marginStart="12dp"
         android:text="@string/connect"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         />
 
 
@@ -22,13 +22,21 @@
         android:id="@+id/control_forward"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginStart="70dp"
+        android:layout_marginTop="12dp"
         android:text="@string/forward"
-        app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/control_led_connect" />
+        />
 
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/control_stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/stop"
+        app:layout_constraintStart_toEndOf="@id/control_left"
+        app:layout_constraintTop_toBottomOf="@id/control_forward"
+        />
 
     <android.support.v7.widget.AppCompatButton
         android:id="@+id/control_left"
@@ -57,6 +65,7 @@
         android:text="@string/back"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/control_left" />
+        app:layout_constraintTop_toBottomOf="@+id/control_left"
+        app:layout_constraintStart_toEndOf="@id/control_left"/>
 
 </android.support.constraint.ConstraintLayout>

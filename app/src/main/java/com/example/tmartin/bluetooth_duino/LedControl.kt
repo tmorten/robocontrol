@@ -195,5 +195,10 @@ class LedControl : AppCompatActivity() {
             Log.d("RoboDuino", "Backward button pushed")
             m_BlueT.send("b", true)
         }
+
+        control_stop.setOnClickListener {
+            Log.d("RoboDuino", "Stop button pushed")
+            m_BlueT.send("s", true)
+        }
     }
 }
