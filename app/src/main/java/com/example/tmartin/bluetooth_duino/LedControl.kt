@@ -21,18 +21,21 @@ import java.util.*
 class LedControl : AppCompatActivity() {
 
     lateinit var m_BlueT : BluetoothSPP
+    lateinit var layout : View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_led_control)
-        val layout = findViewById<ConstraintLayout>(R.id.layout)
+        layout = findViewById<ConstraintLayout>(R.id.layout)
         val background = CreateCanvas(this)
-        layout.addView(background)
+        (layout as ConstraintLayout?)?.addView(background)
+
         m_BlueT = BluetoothSPP(this)
 
         if(!m_BlueT.isBluetoothAvailable()) {
             // bluetooth is not available
             Toast.makeText(applicationContext, "Bluetooth is not available", Toast.LENGTH_LONG).show()
+            finish()
         }
 
         m_BlueT.setBluetoothConnectionListener(object : BluetoothSPP.BluetoothConnectionListener {
@@ -57,41 +60,20 @@ class LedControl : AppCompatActivity() {
                 startActivityForResult(intent, BluetoothState.REQUEST_CONNECT_DEVICE)
             }
         }
-
-        control_forward.setOnClickListener {
-            Log.d("RoboDuino", "Forward button pushed")
-            m_BlueT.send("f", true)
-        }
-
-        control_left.setOnClickListener {
-            Log.d("RoboDuino", "Left button pushed")
-            m_BlueT.send("l", true)
-        }
-
-        control_right.setOnClickListener {
-            Log.d("RoboDuino", "Right button pushed")
-            m_BlueT.send("r", true)
-        }
-
-        control_back.setOnClickListener {
-            Log.d("RoboDuino", "Backward button pushed")
-            m_BlueT.send("b", true)
-        }
-        /*
-        for (i in 1..50)
-        {
-            val bgrnd = CreatePoints(this)
-            layout.addView(bgrnd)
-        }*/
     }
 
     override fun onResume() {
         super.onResume()
         m_BlueT.setOnDataReceivedListener { data, message ->
             try {
-                var mAngle = message.split('-')[0].toInt()
-                var mDistance = message.split('-')[1].toInt()
-                    CreatePoints(this, mAngle, mDistance)
+                val canvas = CreateCanvas(this)
+                (layout as ConstraintLayout).addView(canvas)
+                var mDistance = message.split('-')[0].toInt()
+                var mAngle = message.split('-')[1].toInt()
+                Log.d("RoboDuino", "Angle: ${mAngle}, Distance: ${mDistance}")
+
+                val point = CreatePoints(this, mAngle, mDistance)
+                (layout as ConstraintLayout).addView(point)
                 }
             catch (e: Exception){
 
@@ -112,30 +94,12 @@ class LedControl : AppCompatActivity() {
             brush.setARGB(255, 255, 0, 0)
             val centerX = canvas!!.width/2
             val centerY = canvas!!.height - canvas.height/3
-            val convDistance = mDistance / 50 * (width-30)
-            //val randX = random(0, 720).toDouble()
-            //val randY = random(0, 1118).toDouble()
-            //val distance = Math.sqrt(Math.pow(randX-centerX, 2.toDouble()) + Math.pow(randY-centerY, 2.toDouble()))
-            //val rad = 340.toFloat()/2 * mDistance / 100
-            /*if( distance <= 340)
-            {
-                if (distance < 44.5)
-                    brush.setARGB(255, 255, 0, 0)
-                else if (distance > 44.5 && distance < 85)
-                    brush.setARGB(255, 64, 128, 64)
-                else if (distance > 85 && distance < 170)
-                    brush.setARGB(255, 0, 255, 0)
-                else if (distance > 170 && distance < 255)
-                    brush.setARGB(255, 64, 64, 128)
-                else
-                    brush.setARGB(255, 0, 0, 255)
+            val convDistance = mDistance / 50.0f * (width/2 - 30)
 
-            }*/
-
-            canvas!!.drawCircle(GetNewXPoint(mAngle, centerX, centerY, convDistance), GetNewYPoint(mAngle, centerX, centerY, convDistance), 5.toFloat(), brush)
+            canvas!!.drawCircle(GetNewXPoint(mAngle, centerX, centerY, convDistance), GetNewYPoint(mAngle, centerX, centerY, convDistance), 15.toFloat(), brush)
         }
 
-        fun GetNewXPoint(angle : Int, centerX : Int, centerY: Int, distance : Int) : Float
+        fun GetNewXPoint(angle : Int, centerX : Int, centerY: Int, distance : Float) : Float
         {
             val angleRad = angle * Math.PI/180
             val cosTheta = Math.cos(angleRad)
@@ -143,7 +107,7 @@ class LedControl : AppCompatActivity() {
             return (cosTheta * (centerX - centerX) - sinTheta * (centerY-distance - centerY) + centerX).toFloat()
         }
 
-        fun GetNewYPoint(angle : Int, centerX: Int, centerY : Int, distance: Int) : Float
+        fun GetNewYPoint(angle : Int, centerX: Int, centerY : Int, distance: Float) : Float
         {
             val angleRad = angle * Math.PI/180
             val cosTheta = Math.cos(angleRad)
@@ -183,8 +147,11 @@ class LedControl : AppCompatActivity() {
             m_BlueT.enable()
         } else {
             // BT is enabled
-            m_BlueT.setupService()
-            m_BlueT.startService(BluetoothState.DEVICE_OTHER)
+            if (!m_BlueT.isServiceAvailable) {
+                m_BlueT.setupService()
+                m_BlueT.startService(BluetoothState.DEVICE_OTHER)
+                setup()
+            }
         }
     }
 
@@ -205,6 +172,28 @@ class LedControl : AppCompatActivity() {
                     finish()
                 }
             }
+        }
+    }
+
+    private fun setup() {
+        control_forward.setOnClickListener {
+            Log.d("RoboDuino", "Forward button pushed")
+            m_BlueT.send("f", true)
+        }
+
+        control_left.setOnClickListener {
+            Log.d("RoboDuino", "Left button pushed")
+            m_BlueT.send("l", true)
+        }
+
+        control_right.setOnClickListener {
+            Log.d("RoboDuino", "Right button pushed")
+            m_BlueT.send("r", true)
+        }
+
+        control_back.setOnClickListener {
+            Log.d("RoboDuino", "Backward button pushed")
+            m_BlueT.send("b", true)
         }
     }
 }
